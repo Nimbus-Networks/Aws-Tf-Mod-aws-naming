@@ -1,4 +1,16 @@
-output "name" {
-  description = "The generated name with random_id presented in padded hexadecimal digits as suffix."
-  value       = random_id.this.hex
+output "unique-seed" {
+  value = coalesce(var.unique-seed, local.random_safe_generation)
+}
+
+output "validation" {
+  value = local.validation
+}
+output "analysis_services_server" {
+  value       = local.az.analysis_services_server
+  description = "Analysis Services Server"
+}
+
+output "api_management" {
+  value       = local.az.api_management
+  description = "Api Management"
 }

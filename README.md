@@ -1,175 +1,82 @@
-# terraform-aws-resource-naming
+# AWS Naming
 
-[![Terraform Version](https://img.shields.io/badge/Terraform%20Version->=0.13.0,<0.14.0-blue.svg)](https://releases.hashicorp.com/terraform/)
-[![Release](https://img.shields.io/github/release/traveloka/terraform-aws-resource-naming.svg)](https://github.com/traveloka/terraform-aws-resource-naming/releases)
-[![Last Commit](https://img.shields.io/github/last-commit/traveloka/terraform-aws-resource-naming.svg)](https://github.com/traveloka/terraform-aws-resource-naming/commits/master)
-[![Issues](https://img.shields.io/github/issues/traveloka/terraform-aws-resource-naming.svg)](https://github.com/traveloka/terraform-aws-resource-naming/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/traveloka/terraform-aws-resource-naming.svg)](https://github.com/traveloka/terraform-aws-resource-naming/pulls)
-[![License](https://img.shields.io/github/license/traveloka/terraform-aws-resource-naming.svg)](https://github.com/traveloka/terraform-aws-resource-naming/blob/master/LICENSE)
-![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)
+This module helps you to keep consistency on your resources names for Terraform The goal of this module it is that for each resource that requires a name in Terraform you would be easily able to compose this name using this module and this will keep the consistency in your repositories.
 
-## Table of Content
+# Usage
 
-* [terraform-aws-resource-naming](#terraform-aws-resource-naming)
-   * [Table of Content](#table-of-content)
-   * [Prerequisites](#prerequisites)
-   * [Quick Start](#quick-start)
-      * [Usage](#usage)
-      * [Examples](#examples)
-   * [Module Definition](#module-definition)
-   * [Requirements](#requirements)
-   * [Providers](#providers)
-   * [Modules](#modules)
-   * [Resources](#resources)
-   * [Inputs](#inputs)
-   * [Outputs](#outputs)
-   * [Dependencies](#dependencies)
-   * [Contributing](#contributing)
-   * [License](#license)
+For every resource in `terraform_aws` just remove the `aws` part of the module and use the `name` property of this output.
 
-## Prerequisites
+example for `aws_s3_bucket` you can use :
 
-- [Terraform](https://releases.hashicorp.com/terraform/)
-    - This module was created using Terraform 0.11.6 on 2018/04/10
-    - The latest stable version of Terraform which this module tested working is Terraform 0.13.7 on 2021/09/15
-
-## Quick Start
-
-For most of the resources, AWS does not allow us to create multiple resources with the same name. That is the reason why we need to make them unique.
-
-This module will help you to generate a unique resource name by adding `random_id` value as a suffix to the name prefix you specified. Not just adding, but this module will also calculate how many random characters should be added to the prefix so it will not exceed maximum character allowed from AWS. Check the list below for AWS services supported by this module.
-
-<details><summary>Supported resources:</summary>
-<p>
-
-- autoscaling_group
-- autoscaling_policy
-- autoscaling_schedule
-- cloudwatch_event_rule
-- cloudwatch_log_group
-- cloudwatch_metric_alarm
-- cloudwatch_metric_stream
-- codebuild_project
-- codecommit_repository
-- codepipeline
-- db_instance
-- db_parameter_group
-- dms_endpoint
-- dms_replication_instance
-- dms_replication_task
-- dynamodb_table
-- ecr_repository
-- ecs_cluster
-- ecs_service
-- ecs_task_definition
-- elasticache_cluster
-- elasticache_parameter_group
-- elasticsearch_domain
-- iam_instance_profile
-- iam_role
-- instance
-- key_pair
-- kinesis_firehose_delivery_stream
-- lambda_function
-- launch_configuration
-- lb
-- lb_target_group
-- s3_bucket
-- secretsmanager_secret
-- security_group
-- sns_topic
-- sqs_queue
-- step_function
-- waf_byte_match_set
-- waf_geo_match_set
-- waf_ipset
-- waf_rate_based_rule
-- waf_regex_match_set
-- waf_regex_pattern_set
-- waf_rule
-- waf_rule_group
-- waf_size_constraint_set
-- waf_sql_injection_match_set
-- waf_web_acl
-- waf_xss_match_set
-- wafregional_byte_match_set
-- wafregional_geo_match_set
-- wafregional_ipset
-- wafregional_rate_based_rule
-- wafregional_regex_match_set
-- wafregional_regex_pattern_set
-- wafregional_rule
-- wafregional_rule_group
-- wafregional_size_constraint_set
-- wafregional_sql_injection_match_set
-- wafregional_web_acl
-- wafregional_xss_match_set
-
-</p>
-</details>
-
-**Notes:**
-- If character length of your name prefix already exceeds maximum character allowed from AWS, this module will not do anything about it. Executing `terraform apply` will most likely to fail.
-
-
-### Usage
-
-You need to know what resource you want to provision (`resource_type`) and what the name prefix (`name_prefix`) is. Then provide the information to this module's variables:
-
-```hcl
-provider "random" {
-  version = ">= 1.2.0, < 4.0.0"
+```tf
+module "aws_naming" {
+  source                 = "github.com/Nimbus-Networks/Aws-Tf-Mod-aws-naming"
+  prefix                 = [local.resource_prefix]
+  iteration              = [local.resource_iteration]
+  suffix                 = [local.resource_suffix]
+  unique-seed            = "random"
+  unique-length          = 2
+  unique-include-numbers = false
 }
 
-module "aws-resource-naming_lambda_role" {
-  source        = "github.com/traveloka/terraform-aws-resource-naming"
-  version       = "v0.17.1"
-  name_prefix   = "LambdaRole_DailyScheduler"
-  resource_type = "iam_role"
-}
-
-resource "aws_iam_role" "lambda_role" {
-  name        = "${module.aws-resource-naming_lambda_role.name}"
-  path        = "/lambda-role/"
-  description = "Lambda Role for Daily Scheduler"
-
-  assume_role_policy   = "${data.aws_iam_policy_document.lambda_assume_role_policy.json}"
-}
-
-data "aws_iam_policy_document" "lambda_assume_role_policy" {
-  statement = {
-    actions = ["sts:AssumeRole"]
-    effect  = "Allow"
-
-    principals = {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
+resource "aws_s3_bucket" "example" {
+  bucket = module.aws_naming.s3_bucket.name
 }
 ```
 
-To understand better on how to implement this module, you can go into `examples` folder and try them.
+if you want this to be unique for this module and not shared with other instances of this module you can use `name_unique`
 
-### Examples
+```tf
+resource "aws_s3_bucket" "example_unique" {
+  bucket = module.aws_naming.s3_bucket.name_unique
+}
+```
+Other advanced usages will be explained in the [Advanced usage](#advanced-usage) part of this docs.
 
-- [Autoscaling Policy Example](https://github.com/traveloka/terraform-aws-resource-naming/tree/master/examples/autoscaling-policy-example)
-- [PostgreSQL Parameter Group](https://github.com/traveloka/terraform-aws-resource-naming/tree/master/examples/postgres-parameter-group)
+## Output
 
-## Module Definition
+Each one of the resources emits the name of the resource and other properties:
+
+| Property | Type | Description |
+| ----- |----- | ---- |
+| name | string | name of the resource including respective suffixes and prefixes applied |
+| name_unique | string | same as the name but with random chars added for uniqueness |
+| dashes | bool | if these resources support dashes |
+| slug | string | letters to identify this resource among others |
+| min_length | integer | Minimum length required for this resource name |
+| max_length | integer | Maximum length allowed for this resource name |
+| scope | string | scope which this name needs to be unique, such as `resourcegroup` or `global`  |
+| regex | string | Terraform compatible version of the regex |
+
+### Example Output
+
+Every resource will have an output with the following format:
+
+```go
+postgresql_server = {
+      name        = "pre-fix-psql-su-fix"
+      name_unique = "pre-fix-psql-su-fix-asdfg"
+      dashes      = true
+      slug        = "psql"
+      min_length  = 3
+      max_length  = 63
+      scope       = "global"
+      regex       = "^[a-z0-9][a-zA-Z0-9-]+[a-z0-9]$"
+    }
+```
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.3.2 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_random"></a> [random](#provider\_random) | n/a |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.3.2 |
 
 ## Modules
 
@@ -179,32 +86,17 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [random_id.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
+| [random_string.first_letter](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
+| [random_string.main](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_keepers"></a> [keepers](#input\_keepers) | Arbitrary map of values that, when changed, will trigger a new id to be generated. | `map(any)` | `{}` | no |
-| <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix) | Arbitrary string to prefix the output value with. Adding trailing dash/hypen will not give any effect, it will be added by the module automatically. | `string` | n/a | yes |
-| <a name="input_resource_type"></a> [resource\_type](#input\_resource\_type) | AWS Resource type that the name will be generated by this module. | `string` | n/a | yes |
+| <a name="input_prefix"></a> [prefix](#input\_prefix) | It is not recommended that you use prefix by azure you should be using a suffix for your resources. | `list(string)` | `[]` | no |
+| <a name="input_suffix"></a> [suffix](#input\_suffix) | It is recommended that you specify a suffix for consistency. please use only lowercase characters when possible | `list(string)` | `[]` | no |
+| <a name="input_unique-include-numbers"></a> [unique-include-numbers](#input\_unique-include-numbers) | If you want to include numbers in the unique generation | `bool` | `true` | no |
+| <a name="input_unique-length"></a> [unique-length](#input\_unique-length) | Max length of the uniqueness suffix to be added | `number` | `4` | no |
+| <a name="input_unique-seed"></a> [unique-seed](#input\_unique-seed) | Custom value for the random characters to be used | `string` | `""` | no |
 
 ## Outputs
-
-| Name | Description |
-|------|-------------|
-| <a name="output_name"></a> [name](#output\_name) | The generated name with random\_id presented in padded hexadecimal digits as suffix. |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-
-
-## Dependencies
-
-This module does not have any dependencies to other modules.
-
-## Contributing
-
-Can not see the resource you want to provision on the list above? Open [CONTRIBUTING](CONTRIBUTING.md) to learn how to add it by yourself!
-
-## License
-
-Apache 2 Licensed. See LICENSE for full details.
