@@ -152,8 +152,8 @@ output "sns_topic" {
   value       = local.aws.sns_topic
   description = "SNS Topic"
 }
-output "sns_queue" {
-  value       = local.aws.sns_queue
+output "sqs_queue" {
+  value       = local.aws.sqs_queue
   description = "SNS Topic"
 }
 output "step_function" {
